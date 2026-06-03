@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F SAFETY - Checklist de Segurança e Censo Clínico</title>
+  
+  <!-- Font Integration -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons Custom Styling -->
+  <style>
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
+
+  <!-- NOTIFICATION TOAST -->
+  <div id="toast" class="fixed top-4 right-4 z-50 flex items-center gap-2 p-4 rounded-xl border shadow-lg text-xs font-semibold translate-x-full transition-transform duration-300 bg-teal-50 text-teal-800 border-teal-200">
+    <div class="bg-teal-600 text-white p-1 rounded-full">
+      <i data-lucide="check" class="w-3.5 h-3.5"></i>
+    </div>
+    <span id="toast-message">Checklist registrado com sucesso!</span>
+  </div>
+
+  <!-- HEADER -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs px-4 sm:px-6 py-4">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <!-- Logo & Subtitle -->
+      <div class="flex items-center gap-3">
+        <div class="bg-teal-600 text-white p-2.5 rounded-xl shadow-md shadow-teal-100 flex items-center justify-center">
+          <i data-lucide="shield" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-xl font-bold tracking-tight text-slate-800 font-sans uppercase">F SAFETY</h1>
+            <span class="bg-teal-50 text-teal-700 text-xs font-semibold px-2 py-0.5 rounded-full border border-teal-200">Censo & Segurança</span>
+          </div>
+          <p class="text-xs text-slate-500 font-sans">Controle Diário e Passagem de Plantão de Alta Performance</p>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="flex flex-wrap items-center gap-3">
+        <!-- Turn Shift -->
+        <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs font-medium" id="shift-selector">
+          <button onclick="setShift('M')" id="shift-M" class="px-3 py-1.5 rounded-md transition-all text-slate-600 hover:text-slate-900">☀️ Manhã</button>
+          <button onclick="setShift('T')" id="shift-T" class="px-3 py-1.5 rounded-md transition-all text-slate-600 hover:text-slate-900">⛅ Tarde</button>
+          <button onclick="setShift('N')" id="shift-N" class="px-3 py-1.5 rounded-md transition-all bg-white text-teal-700 shadow-xs font-bold">🌙 Noite</button>
+        </div>
+
+        <!-- Date Picker -->
+        <input type="date" id="system-date" onchange="handleDateChange()" class="bg-slate-50 text-slate-700 border border-slate-200 rounded-lg text-xs py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-teal-500 font-sans">
+
+        <!-- Export/Clear -->
+        <div class="flex gap-1.5">
+          <button onclick="exportJSON()" title="Exportar dados (JSON)" class="p-2 text-slate-500 hover:text-teal-600 hover:bg-slate-50 rounded-lg border border-slate-200 transition-colors">
+            <i data-lucide="download" class="w-4 h-4"></i>
+          </button>
+          <button onclick="clearForm()" title="Limpar formulário" class="p-2 text-rose-500 hover:bg-rose-50 hover:text-rose-700 rounded-lg border border-slate-200 transition-colors">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab navigation menu -->
+    <div class="max-w-7xl mx-auto mt-4 pt-2 -mb-4 flex gap-1 border-t border-slate-100">
+      <button onclick="switchTab('form')" id="tab-form" class="flex items-center gap-2 px-4 py-2 border-b-2 border-teal-600 text-teal-700 font-semibold bg-teal-50/40 rounded-t-lg text-sm transition-all">
+        <i data-lucide="file-text" class="w-4 h-4"></i>
+        Formulário Diário
+      </button>
+
+      <button onclick="switchTab('dashboard')" id="tab-dashboard" class="flex items-center gap-2 px-4 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-200 text-sm transition-all">
+        <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
+        Painel de Indicadores
+      </button>
+
+      <button onclick="switchTab('history')" id="tab-history" class="flex items-center gap-2 px-4 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-200 text-sm transition-all">
+        <i data-lucide="history" class="w-4 h-4"></i>
+        Registro Histórico
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN MAIN WRAPPER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto pb-12 p-4 sm:p-6">
+    
+    <!-- ================== SECTION: FORM TAB ================== -->
+    <div id="section-form" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <!-- Left side: The Checklist Form fields -->
+      <form id="checklist-form" onsubmit="saveChecklist(event)" class="lg:col-span-7 space-y-6">
+        
+        <!-- BLOCK 1: IDENTIFICATION -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs">
+          <div class="flex items-center gap-2 pb-4 mb-5 border-b border-slate-100">
+            <i data-lucide="clipboard-list" class="w-5 h-5 text-teal-600"></i>
+            <h3 class="font-semibold text-slate-800 text-base">Identificação & Censo Populacional</h3>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <!-- Adultos -->
+            <div class="space-y-2">
+              <label class="text-xs font-semibold text-slate-600 flex items-center gap-1.5 uppercase tracking-wider">
+                <i data-lucide="users" class="w-3.5 h-3.5 text-teal-500"></i> Quantos adultos na unidade?
+              </label>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="adjustValue('adultos', -1)" class="w-10 h-10 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-colors">-</button>
+                <input type="number" id="field-adultos" min="0" value="0" class="flex-1 h-10 text-center font-mono font-medium text-slate-800 border border-slate-200 rounded-lg bg-slate-50/50">
+                <button type="button" onclick="adjustValue('adultos', 1)" class="w-10 h-10 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-colors">+</button>
+              </div>
+            </div>
+
+            <!-- Binomios -->
+            <div class="space-y-2">
+              <label class="text-xs font-semibold text-slate-600 flex items-center gap-1.5 uppercase tracking-wider">
+                <i data-lucide="baby" class="w-3.5 h-3.5 text-teal-500"></i> Quantos binômios?
+              </label>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="adjustValue('binomios', -1)" class="w-10 h-10 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-colors">-</button>
+                <input type="number" id="field-binomios" min="0" value="0" class="flex-1 h-10 text-center font-mono font-medium text-slate-800 border border-slate-200 rounded-lg bg-slate-50/50">
+                <button type="button" onclick="adjustValue('binomios', 1)" class="w-10 h-10 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-colors">+</button>
+              </div>
+            </div>
+
+            <!-- Patients Internados -->
+            <div class="space-y-2 sm:col-span-2 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="space-y-0.5">
+                  <label class="text-xs font-semibold text-slate-700 flex items-center gap-2 uppercase tracking-wider">
+                    <i data-lucide="activity" class="w-4 h-4 text-emerald-500"></i> Há pacientes internados?
+                  </label>
+                  <p class="text-[10px] text-slate-400">Marque se existem pacientes internados fora do censo rotineiro</p>
+                </div>
+
+                <div class="flex items-center gap-3">
+                  <select id="field-hasInternados" onchange="toggleInternadosQty()" class="bg-white border border-slate-200 rounded-md text-xs py-1.5 px-3 focus:outline-none focus:ring-1 focus:ring-teal-500">
+                    <option value="Não">Não</option>
+                    <option value="Sim">Sim</option>
+                  </select>
+
+                  <div id="internados-qty-wrapper" class="hidden items-center gap-1.5">
+                    <label class="text-xs text-slate-600 font-medium">Qtd:</label>
+                    <input type="number" id="field-quantidadeInternados" min="1" value="1" class="w-16 h-8 text-center font-mono text-sm font-medium border border-slate-200 rounded bg-white">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Leitos Vazios -->
+            <div class="space-y-2 sm:col-span-2">
+              <label class="text-xs font-semibold text-slate-600 flex items-center gap-1.5 uppercase tracking-wider">
+                <i data-lucide="bed" class="w-3.5 h-3.5 text-teal-500"></i> Quantos leitos vazios temos?
+              </label>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="adjustValue('leitosVazios', -1)" class="w-10 h-10 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-colors">-</button>
+                <input type="number" id="field-leitosVazios" min="0" value="0" class="flex-1 h-10 text-center font-mono font-medium text-slate-800 border border-slate-200 rounded-lg bg-slate-50/50">
+                <button type="button" onclick="adjustValue('leitosVazios', 1)" class="w-10 h-10 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-colors">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BLOCK 2: HOSPITALLER SECTORS -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs">
+          <div class="flex items-center gap-2 pb-4 mb-5 border-b border-slate-100">
+            <i data-lucide="briefcase" class="w-5 h-5 text-teal-600"></i>
+            <h3 class="font-semibold text-slate-800 text-base">Alocação por Setores e Leitos</h3>
+          </div>
+
+          <div class="space-y-5">
+            <!-- Alojamento Conjunto & Uuchi -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Alojamento conjunto -->
+              <div class="space-y-2">
+                <label class="text-xs font-semibold text-slate-600 flex flex-col gap-0.5">
+                  <span class="uppercase tracking-wider">Alojamento Conjunto</span>
+                  <span class="text-[10px] font-medium text-slate-400 normal-case">Qtd. de pacientes alojados</span>
+                </label>
+                <div class="flex items-center gap-1.5">
+                  <button type="button" onclick="adjustValue('alojamentoConjunto', -1)" class="w-8 h-8 bg-slate-50 border border-slate-200 rounded-md flex items-center justify-center text-slate-500 text-xs hover:bg-slate-100">-</button>
+                  <input type="number" id="field-alojamentoConjunto" min="0" value="0" class="flex-1 h-8 text-center font-mono text-sm font-medium border border-slate-200 rounded-md bg-slate-50/10">
+                  <button type="button" onclick="adjustValue('alojamentoConjunto', 1)" class="w-8 h-8 bg-slate-50 border border-slate-200 rounded-md flex items-center justify-center text-slate-500 text-xs hover:bg-slate-100">+</button>
+                </div>
+              </div>
+
+              <!-- Uchi -->
+              <div class="space-y-2">
+                <label class="text-xs font-semibold text-slate-600 flex flex-col gap-0.5">
+                  <span class="uppercase tracking-wider">UCHI (Unid. Intermediária)</span>
+                  <span class="text-[10px] font-medium text-slate-400 normal-case">Qtd. de pacientes na UCHI</span>
+                </label>
+                <div class="flex items-center gap-1.5">
+                  <button type="button" onclick="adjustValue('uchi', -1)" class="w-8 h-8 bg-slate-50 border border-slate-200 rounded-md flex items-center justify-center text-slate-500 text-xs hover:bg-slate-100">-</button>
+                  <input type="number" id="field-uchi" min="0" value="0" class="flex-1 h-8 text-center font-mono text-sm font-medium border border-slate-200 rounded-md bg-slate-50/10">
+                  <button type="button" onclick="adjustValue('uchi', 1)" class="w-8 h-8 bg-slate-50 border border-slate-200 rounded-md flex items-center justify-center text-slate-500 text-xs hover:bg-slate-100">+</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sinka & Estileto Extra -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Sinka -->
+              <div class="space-y-2">
+                <label class="text-xs font-semibold text-slate-600 flex flex-col gap-0.5">
+                  <span class="uppercase tracking-wider">Sinka (Incubadoras)</span>
+                  <span class="text-[10px] font-medium text-slate-400 normal-case">Dispositivos/cunas ocupadas</span>
+                </label>
+                <div class="flex items-center gap-1.5">
+                  <button type="button" onclick="adjustValue('sinka', -1)" class="w-8 h-8 bg-slate-50 border border-slate-200 rounded-md flex items-center justify-center text-slate-500 text-xs hover:bg-slate-100">-</button>
+                  <input type="number" id="field-sinka" min="0" value="0" class="flex-1 h-8 text-center font-mono text-sm font-medium border border-slate-200 rounded-md bg-slate-50/10">
+                  <button type="button" onclick="adjustValue('sinka', 1)" class="w-8 h-8 bg-slate-50 border border-slate-200 rounded-md flex items-center justify-center text-slate-500 text-xs hover:bg-slate-100">+</button>
+                </div>
+              </div>
+
+              <!-- Estileto extra -->
+              <div class="space-y-2">
+                <label class="text-xs font-semibold text-slate-600 flex flex-col gap-0.5">
+                  <span class="uppercase tracking-wider">Estileto Extra</span>
+                  <span class="text-[10px] font-medium text-slate-400 normal-case">Qtd. de estileto extra ativo</span>
+                </label>
+                <div class="flex items-center gap-1.5">
+                  <button type="button" onclick="adjustValue('estiletoExtra', -1)" class="w-8 h-8 bg-slate-50 border border-slate-200 rounded-md flex items-center justify-center text-slate-500 text-xs hover:bg-slate-100">-</button>
+                  <input type="number" id="field-estiletoExtra" min="0" value="0" class="flex-1 h-8 text-center font-mono text-sm font-medium border border-slate-200 rounded-md bg-slate-50/10">
+                  <button type="button" onclick="adjustValue('estiletoExtra', 1)" class="w-8 h-8 bg-slate-50 border border-slate-200 rounded-md flex items-center justify-center text-slate-500 text-xs hover:bg-slate-100">+</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Circo: Lado a Lado -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/50 space-y-3">
+              <span class="text-xs font-semibold text-slate-700 block uppercase tracking-wider">Circo (Centro Cirúrgico)</span>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Circo - Atual</label>
+                  <div class="flex items-center gap-1">
+                    <button type="button" onclick="adjustValue('circoAtual', -1)" class="w-7 h-7 bg-white border border-slate-200 rounded flex items-center justify-center text-slate-500 text-xs hover:bg-slate-100">-</button>
+                    <input type="number" id="field-circoAtual" min="0" value="0" class="flex-1 h-7 text-center font-mono text-xs font-semibold border border-slate-200 rounded bg-white">
+                    <button type="button" onclick="adjustValue('circoAtual', 1)" class="w-7 h-7 bg-white border border-slate-200 rounded flex items-center justify-center text-slate-500 text-xs hover:bg-slate-100">+</button>
+                  </div>
+                </div>
+
+                <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Circo - Total</label>
+                  <div class="flex items-center gap-1">
+                    <button type="button" onclick="adjustValue('circoTotal', -1, 1)" class="w-7 h-7 bg-white border border-slate-200 rounded flex items-center justify-center text-slate-500 text-xs hover:bg-slate-100">-</button>
+                    <input type="number" id="field-circoTotal" min="1" value="5" class="flex-1 h-7 text-center font-mono text-xs font-semibold border border-slate-200 rounded bg-white">
+                    <button type="button" onclick="adjustValue('circoTotal', 1)" class="w-7 h-7 bg-white border border-slate-200 rounded flex items-center justify-center text-slate-500 text-xs hover:bg-slate-100">+</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BLOCK 3: COMPLEXITY & LONG-STAY -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs">
+          <div class="flex items-center gap-2 pb-4 mb-5 border-b border-slate-100">
+            <i data-lucide="alert-octagon" class="w-5 h-5 text-teal-600"></i>
+            <h3 class="font-semibold text-slate-800 text-base">Alertas Críticos e Permanência</h3>
+          </div>
+
+          <div class="space-y-5">
+            <!-- Pacientes acima da média -->
+            <div class="space-y-2">
+              <label class="text-xs font-semibold text-slate-600 flex flex-col gap-0.5">
+                <span class="uppercase tracking-wider flex items-center gap-2 text-rose-600">
+                  <i data-lucide="alert-triangle" class="w-4 h-4"></i> Pacientes acima da média de complexidade
+                </span>
+                <span class="text-[10px] font-medium text-slate-400 normal-case pl-6">Casos complexos que necessitam vigilância reforçada</span>
+              </label>
+              <div class="flex items-center gap-2 pl-6">
+                <button type="button" onclick="adjustValue('pacientesAcimaMedia', -1)" class="w-9 h-9 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100">-</button>
+                <input type="number" id="field-pacientesAcimaMedia" min="0" value="0" class="w-24 h-9 text-center font-mono font-medium text-slate-800 border border-slate-200 rounded-lg">
+                <button type="button" onclick="adjustValue('pacientesAcimaMedia', 1)" class="w-9 h-9 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100">+</button>
+              </div>
+            </div>
+
+            <!-- Observações descritivas -->
+            <div class="space-y-2">
+              <label class="text-xs font-semibold text-slate-600 uppercase tracking-wider block">Observações / Informação acima da média</label>
+              <textarea id="field-observacoes" rows="4" placeholder="Ex: RN sob vigilância constante devido a picos térmicos, mãe hipertensa no leito 12..." class="w-full text-sm border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-slate-50/20 placeholder-slate-400"></textarea>
+            </div>
+
+            <!-- SLA Dias permanência -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-100">
+              <div class="space-y-2">
+                <label class="text-xs font-semibold text-slate-700 flex flex-col">
+                  <span class="uppercase tracking-wider">Alojamento Conjunto (SLA dias)</span>
+                </label>
+                <input type="number" id="field-tempoAlojamento" min="1" value="3" class="w-full h-9 border border-slate-200 rounded-lg text-center font-mono font-medium">
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-xs font-semibold text-slate-700 flex flex-col">
+                  <span class="uppercase tracking-wider">UCHI (SLA dias)</span>
+                </label>
+                <input type="number" id="field-tempoUchi" min="1" value="8" class="w-full h-9 border border-slate-200 rounded-lg text-center font-mono font-medium">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wide cursor-pointer">
+          <i data-lucide="check" class="w-5 h-5"></i>
+          Salvar Dados no Registro Histórico
+        </button>
+      </form>
+
+      <!-- Right side: Standalone local AI Handover simulation -->
+      <div class="lg:col-span-5 space-y-6">
+        <div class="bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-2xl border border-slate-800 p-5 sm:p-6 shadow-xl relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-teal-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+          <div class="flex items-start justify-between gap-3 pb-4 mb-4 border-b border-slate-800">
+            <div class="flex items-center gap-2">
+              <i data-lucide="bot" class="w-6 h-6 text-teal-400"></i>
+              <div>
+                <h3 class="font-bold text-sm text-slate-100">Gerador de Handover Inteligente</h3>
+                <p class="text-[10px] text-teal-400 font-mono tracking-wide">Relatório de Plantão Automatizado</p>
+              </div>
+            </div>
+
+            <button type="button" onclick="generateHandoverReport()" class="bg-teal-400 hover:bg-teal-300 text-slate-950 font-bold text-xs py-1.5 px-3 rounded-lg flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+              Gerar Relatório
+            </button>
+          </div>
+
+          <p class="text-xs text-slate-300 leading-relaxed font-sans mb-5">Consolida todas as informações clínicas em um relatório estruturado e formatado em markdown adequado para passar o plantão com segurança clínica e mitigação de erros.</p>
+
+          <!-- Report results container box -->
+          <div id="ai-report-box" class="hidden space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] text-teal-400 uppercase tracking-widest font-mono">Relatório de Transição Clínico</span>
+              <button onclick="copyToClipboard()" class="p-1 px-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 flex items-center gap-1 text-[10px] transition-all uppercase hover:text-white">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                <span id="copy-btn-text">Copiar</span>
+              </button>
+            </div>
+
+            <!-- Dynamic Markdown Content Area -->
+            <div id="ai-markdown-content" class="bg-slate-900/50 rounded-xl border border-slate-800 p-4 max-h-[460px] overflow-y-auto custom-scrollbar text-xs leading-relaxed space-y-3 font-sans text-slate-200">
+              <!-- Content generated under runtime script -->
+            </div>
+          </div>
+
+          <!-- Blank State -->
+          <div id="ai-blank-state" class="border border-dashed border-slate-800 rounded-xl p-8 text-center text-slate-500">
+            <i data-lucide="bot" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
+            <p class="text-xs font-medium text-slate-400">Nenhum relatório gerado ainda</p>
+            <p class="text-[10px] text-slate-600 mt-1 max-w-[200px] mx-auto">Aperte em "Gerar Relatório" para sintetizar clinicamente a ocupação do dia.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ================== SECTION: DASHBOARD TAB ================== -->
+    <div id="section-dashboard" class="hidden space-y-6">
+      
+      <!-- Metrics overview blocks -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Occ card -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-3xs flex items-center justify-between">
+          <div>
+            <span class="text-[10px] font-bold text-slate-450 uppercase tracking-widest block">Ocupação de Leitos</span>
+            <span id="dash-occupiedBeds" class="text-2xl font-bold text-slate-800 block mt-1">0</span>
+            <span id="dash-occupancyBadge" class="text-[10px] font-medium px-2 py-0.5 rounded-full inline-block mt-2">0% Taxa de Ocupação</span>
+          </div>
+          <div class="p-3 bg-teal-50 text-teal-600 rounded-xl">
+            <i data-lucide="activity" class="w-6 h-6"></i>
+          </div>
+        </div>
+
+        <!-- Adultos average counter -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-3xs flex items-center justify-between">
+          <div>
+            <span class="text-[10px] font-bold text-slate-450 uppercase tracking-widest block">Adultos em Atendimento</span>
+            <span id="dash-adults" class="text-2xl font-bold text-slate-800 block mt-1">0</span>
+            <p class="text-[10px] text-slate-400 mt-1">Adultos registrados hoje</p>
+          </div>
+          <div class="p-3 bg-teal-50 text-teal-600 rounded-xl">
+            <i data-lucide="users" class="w-6 h-6"></i>
+          </div>
+        </div>
+
+        <!-- Binomios average counter -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-3xs flex items-center justify-between">
+          <div>
+            <span class="text-[10px] font-bold text-slate-450 uppercase tracking-widest block">Binômios (Mãe+RN)</span>
+            <span id="dash-binomios" class="text-2xl font-bold text-slate-800 block mt-1">0</span>
+            <p class="text-[10px] text-slate-400 mt-1">Conjuntos no alojamento</p>
+          </div>
+          <div class="p-3 bg-sky-50 text-sky-600 rounded-xl">
+            <i data-lucide="baby" class="w-6 h-6"></i>
+          </div>
+        </div>
+
+        <!-- Complex patients alert counter -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-3xs flex items-center justify-between">
+          <div>
+            <span class="text-[10px] font-bold text-slate-450 uppercase tracking-widest block">Casos Complexos</span>
+            <span id="dash-complex" class="text-2xl font-bold text-rose-600 block mt-1">0</span>
+            <p class="text-[10px] text-slate-400 mt-1">Alertas clínicos ativos</p>
+          </div>
+          <div class="p-3 bg-rose-50 text-rose-500 rounded-xl">
+            <i data-lucide="alert-octagon" class="w-6 h-6"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sector specific metrics container -->
+      <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider pt-2">Disponibilidade e Alocação dos Setores</h3>
+      <div id="dash-sectors-layout" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+        <!-- Filled programmatically in JS -->
+      </div>
+
+      <!-- Historical SVG Line Chart Area -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs mt-4">
+        <h4 class="text-sm font-bold text-slate-700 flex items-center gap-2 mb-1">
+          <i data-lucide="trending-up" class="w-4 h-4 text-teal-600"></i> Evolutivo de Pacientes da Unidade
+        </h4>
+        <p class="text-[10px] text-slate-400 mb-6 font-sans">Evolução correspondente aos últimos plantões finalizados registrados no F Safety</p>
+
+        <!-- No data notification -->
+        <div id="dash-chart-blank" class="h-44 bg-slate-50 border border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center p-6 text-center">
+          <i data-lucide="trending-up" class="w-8 h-8 text-slate-400 mb-2"></i>
+          <p class="text-xs font-semibold text-slate-650">Histórico evolutivo requer mais registros</p>
+          <p class="text-[10px] text-slate-400 max-w-[320px] mt-0.5">Insira e salve pelo menos dois plantões com datas diferentes para acompanhar o gráfico evolutivo.</p>
+        </div>
+
+        <div id="dash-chart-container" class="hidden overflow-x-auto">
+          <div class="min-w-[600px] h-[300px] relative">
+            <svg id="dashboard-svg" class="w-full h-full" viewBox="0 0 600 240">
+              <!-- Dynamically rendered visual path via JS -->
+            </svg>
+
+            <!-- Legends -->
+            <div class="flex justify-center items-center gap-6 mt-2">
+              <div class="flex items-center gap-2">
+                <span class="w-3.5 h-3.5 bg-teal-600 rounded-full inline-block"></span>
+                <span class="text-[10px] font-semibold text-slate-600">Pacientes Totais</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-3.5 h-3.5 bg-rose-500 rounded-full inline-block"></span>
+                <span class="text-[10px] font-semibold text-slate-600">Casos Complexos</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ================== SECTION: HISTORY RECORD TAB ================== -->
+    <div id="section-history" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <!-- Left List of logs -->
+      <div class="lg:col-span-12 space-y-5" id="history-list-parent">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="relative w-full sm:max-w-xs">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+              <i data-lucide="search" class="w-4 h-4"></i>
+            </span>
+            <input type="text" id="history-search" oninput="renderHistoryTable()" placeholder="Pesquisar por data ou termo..." class="w-full text-xs pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none">
+          </div>
+
+          <button onclick="exportCSV()" class="flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold py-2 px-3 rounded-lg border border-slate-200 cursor-pointer">
+            <i data-lucide="download-cloud" class="w-4 h-4 text-emerald-600"></i> Exportar Tudo em CSV
+          </button>
+        </div>
+
+        <!-- History records table -->
+        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
+                  <th class="py-3 px-4">Data do Censo</th>
+                  <th class="py-3 px-4">Adultos</th>
+                  <th class="py-3 px-4">Binômios</th>
+                  <th class="py-3 px-4">Status Internados</th>
+                  <th class="py-3 px-4">Casos Complexos</th>
+                  <th class="py-3 px-4 text-center">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="history-records-tbody" class="divide-y divide-slate-100 font-sans">
+                <!-- Programmed dynamically in JS script -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right detail drill down (appears flex programmatically) -->
+      <div id="history-detail-side" class="hidden lg:col-span-5 bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-6">
+        <!-- Populated on click programmatically -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- STANDALONE COMPACT FOOTER -->
+  <footer class="bg-white border-t border-slate-200 py-4 px-6 text-center text-[10px] tracking-widest uppercase font-mono text-slate-400 mt-auto">
+    F Safety © <span id="current-year">2026</span> — Plataforma Hospitalar de Censo de Leitos e Prevenção de Incidentes.
+  </footer>
+
+  <!-- ========================================== -->
+  <!--               RUNTIME GLOBAL JAVASCRIPT    -->
+  <!-- ========================================== -->
+  <script>
+    // Initialize standard values representing clinic state
+    let shift = 'N';
+    let database = [];
+
+    // Default checklist object for global modifications
+    let currentChecklist = {
+      adultos: 14,
+      binomios: 9,
+      hasInternados: true,
+      quantidadeInternados: 1,
+      leitosVazios: 4,
+      alojamentoConjunto: 9,
+      uchi: 4,
+      sinka: 2,
+      circoAtual: 1,
+      circoTotal: 5,
+      estiletoExtra: 1,
+      pacientesAcimaMedia: 1,
+      observacoes: "Leito 14 - Recém-nascido com icterícia neonatal precoce em fototerapia intensiva nível 3. Mãe sob observação cardiogênica pós-parto imediato.",
+      tempoAlojamento: 3,
+      tempoUchi: 8
+    };
+
+    // Prepopulate Local Database if empty
+    function setupDatabase() {
+      const saved = localStorage.getItem('safety_checklist_history');
+      if (saved) {
+        try {
+          database = JSON.parse(saved);
+        } catch(e) {
+          database = [];
+        }
+      } else {
+        // Pre-loaded realistic patient cases
+        database = [
+          {
+            id: "m1",
+            date: getTodayOffset(-3),
+            adultos: 15,
+            binomios: 10,
+            hasInternados: false,
+            quantidadeInternados: 0,
+            leitosVazios: 3,
+            alojamentoConjunto: 10,
+            uchi: 5,
+            sinka: 3,
+            circoAtual: 3,
+            circoTotal: 5,
+            estiletoExtra: 0,
+            pacientesAcimaMedia: 2,
+            observacoes: "Alta complexidade: Duas mães com picos de hipertensão e necessidade de medicação endovenosa e cardiosugesto.",
+            tempoAlojamento: 3,
+            tempoUchi: 8
+          },
+          {
+            id: "m2",
+            date: getTodayOffset(-2),
+            adultos: 12,
+            binomios: 8,
+            hasInternados: true,
+            quantidadeInternados: 2,
+            leitosVazios: 6,
+            alojamentoConjunto: 8,
+            uchi: 3,
+            sinka: 1,
+            circoAtual: 2,
+            circoTotal: 5,
+            estiletoExtra: 0,
+            pacientesAcimaMedia: 0,
+            observacoes: "Sem ocorrências de risco de risco clínico significativas nesta período.",
+            tempoAlojamento: 3,
+            tempoUchi: 8
+          },
+          {
+            id: "m3",
+            date: getTodayOffset(-1),
+            adultos: 14,
+            binomios: 9,
+            hasInternados: true,
+            quantidadeInternados: 1,
+            leitosVazios: 4,
+            alojamentoConjunto: 9,
+            uchi: 4,
+            sinka: 2,
+            circoAtual: 1,
+            circoTotal: 5,
+            estiletoExtra: 1,
+            pacientesAcimaMedia: 1,
+            observacoes: "Leito 14 - Recém-nascido com icterícia neonatal precoce.",
+            tempoAlojamento: 3,
+            tempoUchi: 8
+          }
+        ];
+        localStorage.setItem('safety_checklist_history', JSON.stringify(database));
+      }
+    }
+
+    // Helper utilities
+    function getTodayOffset(offsetDays) {
+      const d = new Date();
+      d.setDate(d.getDate() + offsetDays);
+      return d.toISOString().split('T')[0];
+    }
+
+    // On Load Initializations
+    window.onload = function() {
+      // Set year
+      document.getElementById('current-year').innerText = new Date().getFullYear();
+      
+      // Initial date representation
+      const todayString = new Date().toISOString().split('T')[0];
+      document.getElementById('system-date').value = todayString;
+
+      // Prepare local database
+      setupDatabase();
+
+      // Look up if today's record is already defined in database, if yes load it
+      const existing = database.find(item => item.date === todayString);
+      if (existing) {
+        currentChecklist = {...existing};
+      }
+
+      // Populate input field components
+      populateFields();
+
+      // Render Dashboard initial stats indicators
+      updateDashboardData();
+
+      // Initialize icons
+      lucide.createIcons();
+    }
+
+    // Bind current object values to DOM components
+    function populateFields() {
+      document.getElementById('field-adultos').value = currentChecklist.adultos;
+      document.getElementById('field-binomios').value = currentChecklist.binomios;
+      document.getElementById('field-hasInternados').value = currentChecklist.hasInternados ? "Sim" : "Não";
+      document.getElementById('field-quantidadeInternados').value = currentChecklist.quantidadeInternados;
+      document.getElementById('field-leitosVazios').value = currentChecklist.leitosVazios;
+      document.getElementById('field-alojamentoConjunto').value = currentChecklist.alojamentoConjunto;
+      document.getElementById('field-uchi').value = currentChecklist.uchi;
+      document.getElementById('field-sinka').value = currentChecklist.sinka;
+      document.getElementById('field-circoAtual').value = currentChecklist.circoAtual;
+      document.getElementById('field-circoTotal').value = currentChecklist.circoTotal;
+      document.getElementById('field-estiletoExtra').value = currentChecklist.estiletoExtra;
+      document.getElementById('field-pacientesAcimaMedia').value = currentChecklist.pacientesAcimaMedia;
+      document.getElementById('field-observacoes').value = currentChecklist.observacoes;
+      document.getElementById('field-tempoAlojamento').value = currentChecklist.tempoAlojamento;
+      document.getElementById('field-tempoUchi').value = currentChecklist.tempoUchi;
+
+      toggleInternadosQty();
+    }
+
+    // Read current form inputs back to the object
+    function gatherFormData() {
+      const selectedSystemDate = document.getElementById('system-date').value;
+      return {
+        id: Math.random().toString(36).substring(2, 9),
+        date: selectedSystemDate,
+        adultos: parseInt(document.getElementById('field-adultos').value) || 0,
+        binomios: parseInt(document.getElementById('field-binomios').value) || 0,
+        hasInternados: document.getElementById('field-hasInternados').value === "Sim",
+        quantidadeInternados: parseInt(document.getElementById('field-quantidadeInternados').value) || 0,
+        leitosVazios: parseInt(document.getElementById('field-leitosVazios').value) || 0,
+        alojamentoConjunto: parseInt(document.getElementById('field-alojamentoConjunto').value) || 0,
+        uchi: parseInt(document.getElementById('field-uchi').value) || 0,
+        sinka: parseInt(document.getElementById('field-sinka').value) || 0,
+        circoAtual: parseInt(document.getElementById('field-circoAtual').value) || 0,
+        circoTotal: parseInt(document.getElementById('field-circoTotal').value) || 5,
+        estiletoExtra: parseInt(document.getElementById('field-estiletoExtra').value) || 0,
+        pacientesAcimaMedia: parseInt(document.getElementById('field-pacientesAcimaMedia').value) || 0,
+        observacoes: document.getElementById('field-observacoes').value,
+        tempoAlojamento: parseInt(document.getElementById('field-tempoAlojamento').value) || 3,
+        tempoUchi: parseInt(document.getElementById('field-tempoUchi').value) || 8
+      };
+    }
+
+    function toggleInternadosQty() {
+      const val = document.getElementById('field-hasInternados').value;
+      const el = document.getElementById('internados-qty-wrapper');
+      if (val === "Sim") {
+        el.style.display = 'flex';
+      } else {
+        el.style.display = 'none';
+      }
+    }
+
+    // Incrementor / Decrementor controls mapper
+    function adjustValue(fieldId, inc, minimumValue = 0) {
+      const el = document.getElementById('field-' + fieldId);
+      if (el) {
+        let current = parseInt(el.value) || 0;
+        let finalVal = Math.max(minimumValue, current + inc);
+        el.value = finalVal;
+      }
+    }
+
+    // Shift selection toggler
+    function setShift(chosen) {
+      shift = chosen;
+      document.getElementById('shift-M').className = "px-3 py-1.5 rounded-md transition-all text-slate-600 hover:text-slate-900";
+      document.getElementById('shift-T').className = "px-3 py-1.5 rounded-md transition-all text-slate-600 hover:text-slate-900";
+      document.getElementById('shift-N').className = "px-3 py-1.5 rounded-md transition-all text-slate-600 hover:text-slate-900";
+      
+      document.getElementById('shift-' + chosen).className = "px-3 py-1.5 rounded-md transition-all bg-white text-teal-700 shadow-xs font-bold";
+      triggerToast("Plantão alterado para: " + (chosen === 'M' ? 'Manhã' : chosen === 'T' ? 'Tarde' : 'Noite'));
+    }
+
+    // Toggle different screens/tabs
+    function switchTab(tabId) {
+      document.getElementById('section-form').style.display = tabId === 'form' ? 'grid' : 'none';
+      document.getElementById('section-dashboard').style.display = tabId === 'dashboard' ? 'block' : 'none';
+      document.getElementById('section-history').style.display = tabId === 'history' ? 'grid' : 'none';
+
+      // Update header tabs buttons visuals
+      const tabs = ['form', 'dashboard', 'history'];
+      tabs.forEach(t => {
+        const el = document.getElementById('tab-' + t);
+        if (t === tabId) {
+          el.className = "flex items-center gap-2 px-4 py-2 border-b-2 border-teal-600 text-teal-700 font-semibold bg-teal-50/40 rounded-t-lg text-sm transition-all";
+        } else {
+          el.className = "flex items-center gap-2 px-4 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-200 text-sm transition-all";
+        }
+      });
+
+      if (tabId === 'dashboard') {
+        const formObj = gatherFormData();
+        currentChecklist = formObj;
+        updateDashboardData();
+      } else if (tabId === 'history') {
+        renderHistoryTable();
+      }
+    }
+
+    // Date picker custom trigger list loader
+    function handleDateChange() {
+      const selected = document.getElementById('system-date').value;
+      const matched = database.find(item => item.date === selected);
+      if (matched) {
+        currentChecklist = {...matched};
+        triggerToast("Censo clínico carregado para " + selected.split('-').reverse().join('/'));
+      } else {
+        // Build new blank instance
+        currentChecklist = {
+          adultos: 0,
+          binomios: 0,
+          hasInternados: false,
+          quantidadeInternados: 0,
+          leitosVazios: 0,
+          alojamentoConjunto: 0,
+          uchi: 0,
+          sinka: 0,
+          circoAtual: 0,
+          circoTotal: 5,
+          estiletoExtra: 0,
+          pacientesAcimaMedia: 0,
+          observacoes: "",
+          tempoAlojamento: 3,
+          tempoUchi: 8
+        };
+        triggerToast("Novo censo em branco para: " + selected.split('-').reverse().join('/'));
+      }
+      populateFields();
+      
+      // Clean previous generated report to avoid state confusion
+      document.getElementById('ai-report-box').classList.add('hidden');
+      document.getElementById('ai-blank-state').classList.remove('hidden');
+    }
+
+    // Toast helper
+    function triggerToast(message) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-message').innerText = message;
+      toast.style.transform = 'translateX(0)';
+      setTimeout(() => {
+        toast.style.transform = 'translateX(120%)';
+      }, 4000);
+    }
+
+    // Submit form and persist
+    function saveChecklist(event) {
+      if (event) event.preventDefault();
+      
+      const formData = gatherFormData();
+      currentChecklist = formData;
+
+      const idx = database.findIndex(rec => rec.date === formData.date);
+      if (idx >= 0) {
+        database[idx] = formData;
+      } else {
+        database.unshift(formData); // append at top
+      }
+
+      localStorage.setItem('safety_checklist_history', JSON.stringify(database));
+      triggerToast("Censo Clínico de " + formData.date.split('-').reverse().join('/') + " salvo no Histórico!");
+      
+      // Redirect to indicators to observe graph update
+      switchTab('dashboard');
+    }
+
+    // Clear active form structure
+    function clearForm() {
+      if (confirm("Deseja redefinir os campos atuais do formulário?")) {
+        currentChecklist = {
+          adultos: 0,
+          binomios: 0,
+          hasInternados: false,
+          quantidadeInternados: 0,
+          leitosVazios: 0,
+          alojamentoConjunto: 0,
+          uchi: 0,
+          sinka: 0,
+          circoAtual: 0,
+          circoTotal: 5,
+          estiletoExtra: 0,
+          pacientesAcimaMedia: 0,
+          observacoes: "",
+          tempoAlojamento: 3,
+          tempoUchi: 8
+        };
+        populateFields();
+        triggerToast("Campos do formulário zerados!");
+      }
+    }
+
+    // Standalone Local AI Handover Generator logic (highly structured text synthesizer matching clinicians expectations)
+    function generateHandoverReport() {
+      const activeData = gatherFormData();
+      const bDate = activeData.date.split('-').reverse().join('/');
+      
+      const totalOccupied = activeData.alojamentoConjunto + activeData.uchi + activeData.sinka + activeData.circoAtual + activeData.estiletoExtra;
+      const totalCapacity = totalOccupied + activeData.leitosVazios;
+      const occPercent = totalCapacity > 0 ? Math.round((totalOccupied / totalCapacity) * 100) : 0;
+
+      // Create a premium structured handover markdown simulated document locally
+      let md = `### 📋 RELATÓRIO DE DE VOLUTA E PASSAGEM DE PLANTÃO (F SAFETY)
+**Plataforma de Segurança Clínica** | Censo de ${bDate}
+
+#### 1. 💡 REASSUMO CLÍNICO GERAL DO CENSO
+- **Capacidade e Ocupação:** Total de **${totalOccupied} leitos ocupados** de um total operacional de ${totalCapacity} (${occPercent}% de taxa de ocupação total).
+- **Leitos Disponíveis (Vazios):** Atualmente, constam **${activeData.leitosVazios} leitos livres** para internação imediata ou remanejamento de emergência na unidade maternidade.
+- **Adultos sob Cuidados:** ${activeData.adultos} pacientes de enfermaria integrados.
+- **Binômios Ativos (Mãe + RN):** Constatado **${activeData.binomios} binomias** acoplados em alojamento conjunto.
+
+#### 2. 🏥 DISTRIBUIÇÃO OPERACIONAL DOS SETORES
+- **Alojamento Clínico:** Atualmente com **${activeData.alojamentoConjunto} leitos em ocupação** ativa (Tempo médio estimado no setor: **${activeData.tempoAlojamento} dias**). Fluxo indica alta rotatividade.
+- **Unidade Intermediária (UCHI):** Atualmente com **${activeData.uchi} pacientes complexos** recebendo cuidados (Tempo médio de permanência: **${activeData.tempoUchi} dias** — verificar possíveis gargalos de alta).
+- **Incubadoras Sinka:** **${activeData.sinka} incubadoras sob vigília** e monitoramento técnico ativo.
+- **Circo (Centro Cirúrgico):** Demanda cirúrgica de **${activeData.circoAtual} procedimentos ativos** de uma capacidade limite de ${activeData.circoTotal}.
+- **Dispositivos Extra:** Sob utilização técnica de **${activeData.estiletoExtra} estileto(s) extras**.
+
+#### 3. ⚠️ ALERTAS CRÍTICOS & PACIENTES ACIMA DA MÉDIA
+- **Casos Complexos Triados:** **${activeData.pacientesAcimaMedia} paciente(s) demandam complexidade extra** da equipe operacional do próximo plantão.
+- **Observações de Vigilância de Risco:** 
+  > *"${activeData.observacoes ? activeData.observacoes : "Sem observações adicionais relatadas no período."}"*
+
+#### 4. 📋 RECOMENDAÇÕES PARA A PRÓXIMA EQUIPE
+- Reduzir sobrecarga de vigilância priorizando monitoramento reforçado nos pacientes acima complexos listados.
+- Manter comunicação continuada sobre ocupação no centro cirúrgico (Circo) e providenciar alta ágil nos setores com internação estendida de modo a mitigar gargalos.`;
+
+      // Render MD content directly replacing simple HTML markers
+      const renderArea = document.getElementById('ai-markdown-content');
+      renderArea.innerHTML = '';
+
+      const lines = md.split('\n');
+      lines.forEach(line => {
+        if (line.startsWith('###')) {
+          const title = document.createElement('h4');
+          title.className = "text-sm font-bold text-teal-400 mt-4 border-t border-slate-800/45 pt-3 first:mt-0 first:border-0";
+          title.innerText = line.replace('### ', '').replace('###', '');
+          renderArea.appendChild(title);
+        } else if (line.startsWith('####')) {
+          const sub = document.createElement('h5');
+          sub.className = "font-bold text-slate-100 text-xs mt-3 flex items-center gap-1 text-teal-300";
+          sub.innerText = line.replace('#### ', '');
+          renderArea.appendChild(sub);
+        } else if (line.startsWith('- ')) {
+          const item = document.createElement('div');
+          item.className = "flex gap-2 pl-2 mt-1.5";
+          item.innerHTML = `<span class="text-teal-400">•</span><p class="text-xs text-slate-300">${line.replace('- ', '').replace(/\*\*(.*?)\*\*/g, '<strong class="text-slate-100 font-semibold">$1</strong>')}</p>`;
+          renderArea.appendChild(item);
+        } else if (line.startsWith('>')) {
+          const block = document.createElement('div');
+          block.className = "border-l-2 border-rose-500 bg-rose-950/20 p-2.5 rounded-r italic text-slate-300 my-2";
+          block.innerHTML = line.replace('> ', '');
+          renderArea.appendChild(block);
+        } else if (line.trim() !== '') {
+          const regular = document.createElement('p');
+          regular.className = "text-slate-300 text-xs";
+          regular.innerHTML = line.replace(/\*\*(.*?)\*\*/g, '<strong class="text-slate-100 font-semibold">$1</strong>');
+          renderArea.appendChild(regular);
+        }
+      });
+
+      // Show report container
+      document.getElementById('ai-blank-state').classList.add('hidden');
+      document.getElementById('ai-report-box').classList.remove('hidden');
+    }
+
+    // Copy formatted report text easily
+    function copyToClipboard() {
+      const area = document.getElementById('ai-markdown-content');
+      if (area) {
+        navigator.clipboard.writeText(area.innerText);
+        const btnText = document.getElementById('copy-btn-text');
+        btnText.innerText = "Copiado!";
+        setTimeout(() => {
+          btnText.innerText = "Copiar";
+        }, 2000);
+      }
+    }
+
+    // ==========================================
+    //               DASHBOARD LOGIC (INDICATORS)
+    // ==========================================
+    function updateDashboardData() {
+      const activeData = currentChecklist;
+
+      // Occupied calculation
+      const totalOccupied = activeData.alojamentoConjunto + activeData.uchi + activeData.sinka + activeData.circoAtual + activeData.estiletoExtra;
+      const totalCapacity = totalOccupied + activeData.leitosVazios;
+      const rate = totalCapacity > 0 ? (totalOccupied / totalCapacity) * 100 : 0;
+
+      document.getElementById('dash-occupiedBeds').innerText = `${totalOccupied} / ${totalCapacity} leitos`;
+      
+      const badge = document.getElementById('dash-occupancyBadge');
+      badge.innerText = `${rate.toFixed(1)}% Taxa de Ocupação`;
+      if (rate > 90) {
+        badge.className = "text-[10px] font-medium px-2 py-0.5 rounded-full inline-block mt-2 bg-rose-50 text-rose-700 border border-rose-100";
+      } else if (rate > 75) {
+        badge.className = "text-[10px] font-medium px-2 py-0.5 rounded-full inline-block mt-2 bg-amber-50 text-amber-700 border border-amber-100";
+      } else {
+        badge.className = "text-[10px] font-medium px-2 py-0.5 rounded-full inline-block mt-2 bg-emerald-50 text-emerald-700 border border-emerald-100";
+      }
+
+      document.getElementById('dash-adults').innerText = activeData.adultos;
+      document.getElementById('dash-binomios').innerText = activeData.binomios;
+      document.getElementById('dash-complex').innerText = activeData.pacientesAcimaMedia;
+
+      // Populate mini-sectors statuses blocks programmatically
+      const sectorsContainer = document.getElementById('dash-sectors-layout');
+      sectorsContainer.innerHTML = `
+        <div class="bg-white p-4 rounded-xl border border-slate-200">
+          <span class="text-[10px] font-bold text-slate-400 block uppercase">Alojamento Conjunto</span>
+          <span class="text-lg font-bold text-slate-800 block mt-1">${activeData.alojamentoConjunto} pacientes</span>
+          <p class="text-[10px] text-slate-400 mt-2">Duração: <strong>${activeData.tempoAlojamento} dias</strong> med</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200">
+          <span class="text-[10px] font-bold text-slate-400 block uppercase">UCHI</span>
+          <span class="text-lg font-bold text-slate-800 block mt-1">${activeData.uchi} pacientes</span>
+          <p class="text-[10px] text-slate-400 mt-2">Duração: <strong>${activeData.tempoUchi} dias</strong> med</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200">
+          <span class="text-[10px] font-bold text-slate-400 block uppercase">Sinka (Incubadoras)</span>
+          <span class="text-lg font-bold text-slate-800 block mt-1">${activeData.sinka} ativas</span>
+          <p class="text-[10px] text-slate-400 mt-2">Equipamentos ativos</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200">
+          <span class="text-[10px] font-bold text-slate-400 block uppercase">Centro Cirúrgico</span>
+          <span class="text-lg font-bold text-slate-800 block mt-1">${activeData.circoAtual} / ${activeData.circoTotal}</span>
+          <div class="w-full h-1 bg-slate-100 rounded-full overflow-hidden mt-2">
+            <div class="h-full bg-emerald-500 rounded-full" style="width: ${Math.min(100, (activeData.circoAtual / Math.max(1, activeData.circoTotal)) * 100)}%"></div>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200">
+          <span class="text-[10px] font-bold text-slate-400 block uppercase">Estileto Extra</span>
+          <span class="text-lg font-bold text-amber-600 block mt-1">${activeData.estiletoExtra} em uso</span>
+          <p class="text-[10px] text-slate-400 mt-2">Dispositivos adicionais</p>
+        </div>
+      `;
+
+      // Render chart
+      renderInteractiveSVGChart();
+    }
+
+    // Custom adaptive Line Chart inside raw SVG element
+    function renderInteractiveSVGChart() {
+      // Sort database logs to render historical evolution
+      const chronological = [...database].sort((a,b) => a.date.localeCompare(b.date)).slice(-7);
+      
+      const blankState = document.getElementById('dash-chart-blank');
+      const chartContainer = document.getElementById('dash-chart-container');
+      
+      if (chronological.length < 2) {
+        blankState.classList.remove('hidden');
+        chartContainer.classList.add('hidden');
+        return;
+      }
+
+      blankState.classList.add('hidden');
+      chartContainer.classList.remove('hidden');
+
+      const svg = document.getElementById('dashboard-svg');
+      svg.innerHTML = ''; // Fresh DOM redraw
+
+      // Setup custom defs for gradients inside raw SVG
+      svg.innerHTML = `
+        <defs>
+          <linearGradient id="totalGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stop-color="#0d9488" stop-opacity="0.2"/>
+            <stop offset="95%" stop-color="#0d9488" stop-opacity="0.01"/>
+          </linearGradient>
+          <linearGradient id="complexGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stop-color="#f43f5e" stop-opacity="0.2"/>
+            <stop offset="95%" stop-color="#f43f5e" stop-opacity="0.01"/>
+          </linearGradient>
+        </defs>
+      `;
+
+      // Draw Gridlines background
+      for(let i=0; i<5; i++) {
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", "45");
+        line.setAttribute("y1", (30 + i * 40).toString());
+        line.setAttribute("x2", "560");
+        line.setAttribute("y2", (30 + i * 40).toString());
+        line.setAttribute("stroke", "#f1f5f9");
+        line.setAttribute("stroke-width", "1");
+        line.setAttribute("stroke-dasharray", "4 4");
+        svg.appendChild(line);
+      }
+
+      // Compute limits
+      const maxVal = Math.max(...chronological.map(item => item.alojamentoConjunto + item.uchi + item.sinka + item.circoAtual), 10);
+      
+      const paddingLeft = 60;
+      const contentWidth = 470;
+      const spacing = contentWidth / (chronological.length - 1);
+
+      // Points array mapped output
+      let totalPoints = [];
+      let complexPoints = [];
+
+      chronological.forEach((item, index) => {
+        const total = item.alojamentoConjunto + item.uchi + item.sinka + item.circoAtual;
+        const complex = item.pacientesAcimaMedia;
+
+        const x = paddingLeft + index * spacing;
+        const yTotal = 190 - (total / maxVal) * 150;
+        const yComplex = 190 - (complex / maxVal) * 150;
+
+        totalPoints.push({ x, y: yTotal, val: total, label: item.date.split('-').slice(1).reverse().join('/') });
+        complexPoints.push({ x, y: yComplex, val: complex });
+      });
+
+      // Total Patients Path D
+      const totalD = totalPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+      const totalArea = `${totalD} L ${totalPoints[totalPoints.length-1].x} 190 L ${totalPoints[0].x} 190 Z`;
+      
+      const complexD = complexPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+      const complexArea = `${complexD} L ${complexPoints[complexPoints.length-1].x} 190 L ${complexPoints[0].x} 190 Z`;
+
+      // Append SVG Area tags
+      const pathAreaTotal = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      pathAreaTotal.setAttribute("d", totalArea);
+      pathAreaTotal.setAttribute("fill", "url(#totalGrad)");
+      svg.appendChild(pathAreaTotal);
+
+      const pathAreaComplex = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      pathAreaComplex.setAttribute("d", complexArea);
+      pathAreaComplex.setAttribute("fill", "url(#complexGrad)");
+      svg.appendChild(pathAreaComplex);
+
+      // Append Path Line tags
+      const pathLineTotal = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      pathLineTotal.setAttribute("d", totalD);
+      pathLineTotal.setAttribute("fill", "none");
+      pathLineTotal.setAttribute("stroke", "#0d9488");
+      pathLineTotal.setAttribute("stroke-width", "2.5");
+      svg.appendChild(pathLineTotal);
+
+      const pathLineComplex = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      pathLineComplex.setAttribute("d", complexD);
+      pathLineComplex.setAttribute("fill", "none");
+      pathLineComplex.setAttribute("stroke", "#f43f5e");
+      pathLineComplex.setAttribute("stroke-width", "2");
+      svg.appendChild(pathLineComplex);
+
+      // Dots and labeling loop
+      totalPoints.forEach((p, idx) => {
+        // Draw total dots
+        const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        dot.setAttribute("cx", p.x);
+        dot.setAttribute("cy", p.y);
+        dot.setAttribute("r", "5");
+        dot.setAttribute("fill", "#0d9488");
+        dot.setAttribute("stroke", "#ffffff");
+        dot.setAttribute("stroke-width", "1.5");
+        svg.appendChild(dot);
+
+        // Draw label text
+        const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        txt.setAttribute("x", p.x);
+        txt.setAttribute("y", p.y - 10);
+        txt.setAttribute("text-anchor", "middle");
+        txt.style.fontFamily = "JetBrains Mono, monospace";
+        txt.style.fontSize = "9px";
+        txt.style.fontWeight = "bold";
+        txt.setAttribute("fill", "#334155");
+        txt.textContent = p.val;
+        svg.appendChild(txt);
+
+        // Draw date bottom labels
+        const dtLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        dtLabel.setAttribute("x", p.x);
+        dtLabel.setAttribute("y", "215");
+        dtLabel.setAttribute("text-anchor", "middle");
+        dtLabel.style.fontSize = "9px";
+        dtLabel.setAttribute("fill", "#64748b");
+        dtLabel.textContent = p.label;
+        svg.appendChild(dtLabel);
+      });
+
+      complexPoints.forEach((p) => {
+        const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        dot.setAttribute("cx", p.x);
+        dot.setAttribute("cy", p.y);
+        dot.setAttribute("r", "4");
+        dot.setAttribute("fill", "#f43f5e");
+        dot.setAttribute("stroke", "#ffffff");
+        dot.setAttribute("stroke-width", "1");
+        svg.appendChild(dot);
+      });
+
+      // Axis captions
+      const captionMax = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      captionMax.setAttribute("x", "15");
+      captionMax.setAttribute("y", "35");
+      captionMax.style.fontSize = "8px";
+      captionMax.setAttribute("fill", "#94a3b8");
+      captionMax.textContent = "Max (" + maxVal + ")";
+      svg.appendChild(captionMax);
+
+      const captionMin = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      captionMin.setAttribute("x", "20");
+      captionMin.setAttribute("y", "195");
+      captionMin.style.fontSize = "8px";
+      captionMin.setAttribute("fill", "#94a3b8");
+      captionMin.textContent = "Ref (0)";
+      svg.appendChild(captionMin);
+    }
+
+
+    // ==========================================
+    //               REGISTERS LOG TABLE COMPILATION
+    // ==========================================
+    function renderHistoryTable() {
+      const q = document.getElementById('history-search').value.toLowerCase();
+      const recordsTbody = document.getElementById('history-records-tbody');
+      recordsTbody.innerHTML = '';
+
+      const filtered = database.filter(rec => {
+        const searchBlob = `${rec.date} ${rec.observacoes}`.toLowerCase();
+        return searchBlob.includes(q);
+      });
+
+      if (filtered.length === 0) {
+        recordsTbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="p-12 text-center text-slate-400 font-sans">
+              <i data-lucide="info" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
+              Nenhum censo correspondente aos termos de busca.
+            </td>
+          </tr>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      filtered.forEach(rec => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 transition-colors";
+        
+        const fDate = rec.date.split('-').reverse().join('/');
+        const internedLabel = rec.hasInternados 
+          ? `<span class="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] px-2 py-0.5 rounded-full font-medium">Sim (${rec.quantidadeInternados})</span>`
+          : `<span class="text-slate-400">-</span>`;
+
+        const alertLabel = rec.pacientesAcimaMedia > 0
+          ? `<span class="bg-rose-50 text-rose-600 font-bold px-2 py-0.5 rounded border border-rose-100 text-[10px]">${rec.pacientesAcimaMedia} Alertas</span>`
+          : `<span class="text-emerald-600">Nenhum</span>`;
+
+        tr.innerHTML = `
+          <td class="py-3.5 px-4 font-semibold text-slate-700 flex items-center gap-2">
+            <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i> ${fDate}
+          </td>
+          <td class="py-3.5 px-4 font-mono text-slate-650">${rec.adultos}p</td>
+          <td class="py-3.5 px-4 font-mono text-slate-650">${rec.binomios}b</td>
+          <td class="py-3.5 px-4">${internedLabel}</td>
+          <td class="py-3.5 px-4">${alertLabel}</td>
+          <td class="py-3.5 px-4 text-center">
+            <div class="flex items-center justify-center gap-1.5">
+              <button onclick="displayDrilldown('${rec.id}')" title="Ver Dossiê" class="p-1 text-slate-500 hover:text-teal-600 hover:bg-slate-50 rounded"><i data-lucide="eye" class="w-4 h-4"></i></button>
+              <button onclick="loadRecordToForm('${rec.id}')" title="Editar censo" class="p-1 text-slate-500 hover:text-teal-600 hover:bg-slate-50 rounded"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+              <button onclick="deleteRecord('${rec.id}')" title="Excluir" class="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </div>
+          </td>
+        `;
+        recordsTbody.appendChild(tr);
+      });
+
+      // Load icons
+      lucide.createIcons();
+    }
+
+    // Detail Drill Down Panel on click Eye
+    function displayDrilldown(recId) {
+      const record = database.find(item => item.id === recId);
+      if (!record) return;
+
+      const panel = document.getElementById('history-detail-side');
+      document.getElementById('history-list-parent').className = "lg:col-span-7 space-y-5";
+      panel.classList.remove('hidden');
+
+      const fDate = record.date.split('-').reverse().join('/');
+
+      // Content templates
+      panel.innerHTML = `
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div>
+            <span class="text-[9px] font-bold text-slate-400 block uppercase tracking-widest font-mono">Dossiê de Segurança</span>
+            <h4 class="text-sm font-bold text-slate-800">Censo de ${fDate}</h4>
+          </div>
+          <button onclick="closeDrilldown()" class="text-xs text-slate-400 hover:text-slate-650 font-medium px-2 py-1 rounded bg-slate-50 border border-slate-200">Fechar x</button>
+        </div>
+
+        <div class="space-y-4 text-xs">
+          <!-- Counts -->
+          <div class="bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-2">
+            <h5 class="font-bold text-slate-500 text-[10px] uppercase tracking-widest mb-1.5">Estatísticas Gerais</h5>
+            <div class="flex justify-between py-1 border-b border-slate-100/50">
+              <span class="text-slate-500">Adultos Atendidos</span>
+              <span class="font-semibold font-mono">${record.adultos}</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-100/50">
+              <span class="text-slate-500">Binômios no Alojamento</span>
+              <span class="font-semibold font-mono">${record.binomios}</span>
+            </div>
+            <div class="flex justify-between py-1">
+              <span class="text-rose-500 font-medium">Leitos Vazios para Admissão</span>
+              <span class="font-bold text-rose-600 font-mono bg-rose-50 px-2 rounded">${record.leitosVazios}</span>
+            </div>
+          </div>
+
+          <!-- Allocations -->
+          <div class="bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-2">
+            <h5 class="font-bold text-slate-500 text-[10px] uppercase tracking-widest mb-1.5">Alocação de Setores</h5>
+            <div class="flex justify-between py-1 border-b border-slate-100/50">
+              <span class="text-slate-500">Alojamento Clínico</span>
+              <span class="font-semibold font-mono">${record.alojamentoConjunto} pacientes</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-100/50">
+              <span class="text-slate-500">UCHI (Intermediária)</span>
+              <span class="font-semibold font-mono">${record.uchi} pacientes</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-100/50">
+              <span class="text-slate-500">Sinka (Incubadoras)</span>
+              <span class="font-semibold font-mono">${record.sinka} ativas</span>
+            </div>
+            <div class="flex justify-between py-1">
+              <span class="text-slate-500">Centro Cirúrgico (Circo)</span>
+              <span class="font-semibold font-mono">${record.circoAtual}/${record.circoTotal}</span>
+            </div>
+          </div>
+
+          <!-- SLA -->
+          <div class="bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-2">
+            <h5 class="font-bold text-slate-500 text-[10px] uppercase tracking-widest mb-1.5">Tempo de Permanência SLA</h5>
+            <div class="flex justify-between py-1">
+              <span class="text-slate-500">Meta AC / UCHI (Dias)</span>
+              <span class="font-semibold text-teal-700 bg-teal-50 px-2 rounded">${record.tempoAlojamento}d / ${record.tempoUchi}d</span>
+            </div>
+          </div>
+
+          <!-- Complexity details observations -->
+          ${record.pacientesAcimaMedia > 0 || record.observacoes ? `
+            <div class="bg-rose-50/40 p-4 rounded-xl border border-rose-100 space-y-2">
+              <div class="flex items-center gap-1.5 text-rose-700 font-bold">
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-500 shrink-0"></i> Observações de Complexidade
+              </div>
+              <p class="text-slate-600 leading-relaxed italic bg-white p-2 border border-rose-100 rounded">${record.observacoes || 'Nenhum detalhamento clínico reportado.'}</p>
+            </div>
+          ` : `
+            <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-100 flex items-center gap-2 text-emerald-800 text-[10px]">
+              <i data-lucide="check" class="w-4 h-4 text-emerald-500 shrink-0"></i> Nenhum alerta reportado hoje.
+            </div>
+          `}
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    function closeDrilldown() {
+      document.getElementById('history-list-parent').className = "lg:col-span-12 space-y-5";
+      document.getElementById('history-detail-side').classList.add('hidden');
+    }
+
+    // Load selected older record back into form
+    function loadRecordToForm(recId) {
+      const record = database.find(item => item.id === recId);
+      if (!record) return;
+
+      currentChecklist = {...record};
+      document.getElementById('system-date').value = record.date;
+      populateFields();
+      
+      switchTab('form');
+      triggerToast("Censo carregado com êxito para edição!");
+    }
+
+    // Delete record log from database
+    function deleteRecord(recId) {
+      if (confirm("Deseja realmente remover este censo do histórico permanente?")) {
+        database = database.filter(item => item.id !== recId);
+        localStorage.setItem('safety_checklist_history', JSON.stringify(database));
+        triggerToast("Registro clínico excluído!");
+        renderHistoryTable();
+        closeDrilldown();
+      }
+    }
+
+    // Complete Database Export as JSON Backup file
+    function exportJSON() {
+      const parsedData = JSON.stringify(database, null, 2);
+      const blob = new Blob([parsedData], {type: "application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `F_SAFETY_BACKUP_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      triggerToast("Reserva de dados baixada com êxito!");
+    }
+
+    // Export log registry to clinical generic standard CSV file
+    function exportCSV() {
+      if (database.length === 0) return;
+      const headers = ['ID', 'Data', 'Adultos', 'Binomias', 'Tem Internados', 'Quantidade Internados', 'Leitos Vazios', 'Alojamento Conjunto', 'UCHI', 'Sinka', 'Circo Ocorrido', 'Circo Capacidade', 'Estileto Extra', 'Complexos Acima Media', 'Observacoes_Clinicas'];
+      
+      let rows = database.map(rec => [
+        rec.id,
+        rec.date,
+        rec.adultos,
+        rec.binomios,
+        rec.hasInternados ? "Sim" : "Nao",
+        rec.quantidadeInternados,
+        rec.leitosVazios,
+        rec.alojamentoConjunto,
+        rec.uchi,
+        rec.sinka,
+        rec.circoAtual,
+        rec.circoTotal,
+        rec.estiletoExtra,
+        rec.pacientesAcimaMedia,
+        `"${rec.observacoes.replace(/"/g, '""')}"`
+      ]);
+
+      let content = "data:text/csv;charset=utf-8," + [headers.join(",") , ...rows.map(r => r.join(","))].join("\n");
+      const link = document.createElement("a");
+      link.setAttribute("href", encodeURI(content));
+      link.setAttribute("download", "F_SAFETY_HISTORY_EXPORT.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      triggerToast("Planilha CSV gerada com sucesso!");
+    }
+  </script>
+
+  <!-- Lucide icons runner -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</body>
+</html>
